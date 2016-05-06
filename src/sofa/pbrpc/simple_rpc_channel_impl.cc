@@ -79,12 +79,24 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
                                       ::google::protobuf::Message* response,
                                       ::google::protobuf::Closure* done)
 {
-    ++_wait_count;
-
     // prepare controller
     RpcController* sofa_controller = dynamic_cast<RpcController*>(controller);
     SCHECK(sofa_controller != NULL); // should be sofa::pbrpc::RpcController
     RpcControllerImplPtr cntl = sofa_controller->impl();
+    if (cntl->IsRetry())
+    {
+        if (_resolve_address_succeed)
+        {
+            cntl->SetRemoteEndpoint(_remote_endpoint);
+            _client_impl->CallMethod(request, response, cntl);
+#if defined( LOG )
+                LOG(INFO) << "CallMethod(): retry on address " << RpcEndpointToString(_remote_endpoint);
+#else
+                SLOG(INFO, "CallMethod(): retry on address %s", RpcEndpointToString(_remote_endpoint).c_str());
+#endif    
+        }
+        return;
+    }
     cntl->PushDoneCallback(boost::bind(&SimpleRpcChannelImpl::DoneCallback,
                 shared_from_this(), done, _1));
     cntl->FillFromMethodDescriptor(method);
@@ -144,6 +156,12 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
     // ready, go ahead to do real call
     cntl->SetRemoteEndpoint(_remote_endpoint);
     cntl->StartTimer();
+    if (!cntl->backup_request_callback())
+    {
+        cntl->set_backup_request_callback(boost::bind(&SimpleRpcChannelImpl::CallMethod,
+                shared_from_this(), method, controller, request, response, done));
+    }
+    ++_wait_count;
     _client_impl->CallMethod(request, response, cntl);
     WaitDone(cntl);
 }

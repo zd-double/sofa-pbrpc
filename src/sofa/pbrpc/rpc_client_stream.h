@@ -58,6 +58,19 @@ public:
     void call_method(const RpcControllerImplPtr& cntl) 
     {
         SOFA_PBRPC_FUNCTION_TRACE;
+        uint64 sequence_id = cntl->SequenceId();
+        if (cntl->IsRetry() && !is_closed())
+        {
+            ReadBufferPtr request_buffer(new ReadBuffer());
+            request_buffer->Append(cntl->RequestBuffer().get());
+            if (cntl->RpcClientStream().lock().get() != this)
+            {
+                ScopedLocker<FastLock> _(_controller_map_lock);
+                _controller_map[sequence_id] = cntl;
+            }
+            async_send_message(request_buffer, cntl);
+            return;
+        }
 
         if (is_closed())
         {
@@ -73,7 +86,6 @@ public:
         }
 
         // add to map
-        uint64 sequence_id = cntl->SequenceId();
         {
             ScopedLocker<FastLock> _(_controller_map_lock);
             _controller_map[sequence_id] = cntl;

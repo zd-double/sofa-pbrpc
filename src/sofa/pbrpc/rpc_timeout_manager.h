@@ -76,15 +76,30 @@ public:
     // Else put the "cntl" into the manager, and return true.
     bool add(const RpcControllerImplPtr& cntl)
     {
+        bool is_backup_request = false;
         const PTime& expiration = cntl->Expiration();
+        const PTime& backup_request_expiration = cntl->BackupRequestExpiration();
+        int64 expiration_ticks = (expiration - _epoch_time).ticks();
+        int64 backup_request_expiration_ticks = (backup_request_expiration - _epoch_time).ticks();
         if (expiration.is_special() || expiration <= _epoch_time)
         {
             cntl->SetTimeoutId(0u);
             return false;
         }
-        int64 expiration_ticks = (expiration - _epoch_time).ticks();
+        if (!backup_request_expiration.is_special() && backup_request_expiration > _epoch_time
+                && backup_request_expiration_ticks <  expiration_ticks)
+        {
+            is_backup_request = true;
+        }
+
         {
             ScopedLocker<FastLock> _(_add_list_lock);
+            if (is_backup_request)
+            {
+                uint64 backup_request_id = _next_id++;
+                cntl->SetBackupRequestId(backup_request_id);
+                _add_list.push_back(Event(backup_request_id, backup_request_expiration_ticks, cntl));
+            }
             uint64 timeout_id = _next_id++;
             cntl->SetTimeoutId(timeout_id);
             _add_list.push_back(Event(timeout_id, expiration_ticks, cntl));
@@ -143,8 +158,15 @@ private:
             {
                 if (add_it->expiration <= now_ticks)
                 {
-                    // expired, notify
-                    notify_timeout(add_it->cntl);
+                    if (add_it->id == add_it->cntl.lock()->BackupRequestId())
+                    {
+                        notify_backup_request(add_it->cntl);
+                    }
+                    else
+                    {   
+                        // expired, notify
+                        notify_timeout(add_it->cntl);
+                    }
                 }
                 else
                 {
@@ -170,8 +192,15 @@ private:
         {
             if (add_it->expiration <= now_ticks)
             {
-                // expired, notify
-                notify_timeout(add_it->cntl);
+                if (add_it->id == add_it->cntl.lock()->BackupRequestId())
+                {
+                    notify_backup_request(add_it->cntl);
+                }
+                else
+                {
+                    // expired, notify
+                    notify_timeout(add_it->cntl);
+                }
             }
             else
             {
@@ -193,8 +222,18 @@ private:
         for (ExpirationIndex::iterator exp_it = exp_index.begin();
                 exp_it != exp_end; ++exp_it)
         {
-            // expired, notify
-            notify_timeout(exp_it->cntl);
+
+            RpcControllerImplPtr cntl = exp_it->cntl.lock();
+
+            if (exp_it->id == exp_it->cntl.lock()->BackupRequestId())
+            {
+                notify_backup_request(exp_it->cntl);
+            }
+            else
+            {
+                // expired, notify
+                notify_timeout(exp_it->cntl);
+            }
         }
         exp_index.erase(exp_index.begin(), exp_end);
     }
@@ -217,6 +256,20 @@ private:
             {
                 stream->erase_request(cntl->SequenceId());
             }
+        }
+    }
+    
+    void notify_backup_request(const RpcControllerImplWPtr& weak_cntl)
+    {
+        RpcControllerImplPtr cntl = weak_cntl.lock();
+        if (cntl)
+        {
+            cntl->SetRetry();
+            const BackupRequestCallback callback = cntl->backup_request_callback();
+            RpcController controller;
+            RpcControllerImplPtr new_cntl = controller.impl(); 
+            new_cntl = cntl;
+            callback(NULL, &controller, NULL, NULL, NULL);
         }
     }
 

@@ -66,6 +66,10 @@ public:
     // * set in the service proto options (default value is 10 seconds)
     int64 Timeout() const;
 
+    void SetBackupRequestMs(int64 backup_request_ms);
+    
+    int64 BackupRequestMs();
+
     // Set compress type of the request message.
     // Supported types:
     //   CompressTypeNone

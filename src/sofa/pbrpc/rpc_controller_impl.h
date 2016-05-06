@@ -25,6 +25,12 @@ namespace pbrpc {
 
 #define CompressTypeAuto ((CompressType)-1)
 
+typedef boost::function<void(const google::protobuf::MethodDescriptor* method,
+        google::protobuf::RpcController* controller,
+        const google::protobuf::Message* request,
+        const google::protobuf::Message* response,
+        google::protobuf::Closure* done)> BackupRequestCallback;
+
 class RpcControllerImpl : public sofa::pbrpc::enable_shared_from_this<RpcControllerImpl>
 {
 public:
@@ -45,6 +51,7 @@ public:
         , _http_path(NULL)
         , _http_query_params(NULL)
         , _http_headers(NULL)
+        , _is_retry(false)
     {}
 
     virtual ~RpcControllerImpl() {}
@@ -80,6 +87,16 @@ public:
     {
         return _user_options.timeout > 0 ?
             _user_options.timeout : _auto_options.timeout;
+    }
+
+    void SetBackupRequestMs(int64 timeout)
+    {
+        _user_options.backup_request_ms = timeout;
+    }
+    
+    int64 BackupRequestMs()
+    {
+        return _user_options.backup_request_ms;
     }
 
     bool Failed() const
@@ -291,13 +308,21 @@ public:
     void StartTimer()
     {
         int64 timeout = Timeout();
+        int64 backup_request_ms = BackupRequestMs();
         _expiration = timeout <= 0 ? ptime_infin()
             : ptime_now() + time_duration_milliseconds(timeout);
+        _backup_request_expiration = backup_request_ms <= 0 ? ptime_infin()
+            : ptime_now() + time_duration_milliseconds(backup_request_ms);
     }
 
     const PTime& Expiration() const
     {
         return _expiration;
+    }
+    
+    const PTime& BackupRequestExpiration() const
+    {
+        return _backup_request_expiration;
     }
 
     void SetTimeoutId(uint64 timeout_id)
@@ -308,6 +333,16 @@ public:
     uint64 TimeoutId() const
     {
         return _timeout_id;
+    }
+
+    void SetBackupRequestId(uint64 backup_request_id)
+    {
+        _backup_request_id = backup_request_id;
+    }
+
+    uint64 BackupRequestId() const
+    {
+        return _backup_request_id;
     }
 
     void SetRequestBuffer(const ReadBufferPtr& request_buffer)
@@ -435,6 +470,26 @@ public:
         return *_http_headers;
     }
 
+    void set_backup_request_callback(const BackupRequestCallback& callback)
+    {
+        _backup_request_callback = callback;
+    }
+    
+    const BackupRequestCallback& backup_request_callback()
+    {
+        return _backup_request_callback;
+    }
+
+    void SetRetry()
+    {
+        _is_retry = true;
+    }
+
+    bool IsRetry()
+    {
+        return _is_retry;
+    }
+
 private:
     uint64 _sequence_id;
     std::string _method_id;
@@ -455,17 +510,21 @@ private:
     WaitEventPtr _wait_event; // used only for sync call
     RpcClientStreamWPtr _client_stream;
     PTime _expiration;
+    PTime _backup_request_expiration;
     uint64 _timeout_id;
+    uint64 _backup_request_id;
     ReadBufferPtr _request_buffer;
     ReadBufferPtr _response_buffer;
     PTime _request_sent_time;
 
     struct RequestOptions {
         int64 timeout;
+        int64 backup_request_ms;
         CompressType request_compress_type;
         CompressType response_compress_type;
         RequestOptions() :
             timeout(0),
+            backup_request_ms(0),
             request_compress_type(CompressTypeAuto),
             response_compress_type(CompressTypeAuto) {}
     };
@@ -483,6 +542,10 @@ private:
     const std::string* _http_path;
     const std::map<std::string, std::string>* _http_query_params;
     const std::map<std::string, std::string>* _http_headers;
+
+    bool _is_retry;
+
+    BackupRequestCallback _backup_request_callback;
 
     SOFA_PBRPC_DISALLOW_EVIL_CONSTRUCTORS(RpcControllerImpl);
 }; // class RpcControllerImpl

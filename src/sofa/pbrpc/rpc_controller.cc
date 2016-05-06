@@ -44,6 +44,16 @@ int64 RpcController::Timeout() const
     return _impl->Timeout();
 }
 
+void RpcController::SetBackupRequestMs(int64 backup_request_ms)
+{
+    _impl->SetBackupRequestMs(backup_request_ms);
+}
+
+int64 RpcController::BackupRequestMs()
+{
+    return _impl->BackupRequestMs();
+}
+
 void RpcController::SetRequestCompressType(CompressType compress_type)
 {
     _impl->SetRequestCompressType(compress_type);

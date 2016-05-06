@@ -226,6 +226,15 @@ void RpcClientImpl::CallMethod(const google::protobuf::Message* request,
 
     // get the stream
     RpcClientStreamPtr stream = FindOrCreateStream(cntl->RemoteEndpoint());
+    if (cntl->IsRetry())
+    {
+        if (stream && stream->pending_buffer_size() < stream->max_pending_buffer_size())
+        {
+            cntl->SetRpcClientStream(stream);
+            stream->call_method(cntl);
+        }
+        return;
+    }
     if (!stream)
     {
 #if defined( LOG )
@@ -426,6 +435,7 @@ void RpcClientImpl::DoneCallback(google::protobuf::Message* response,
 {
     // erase from RpcTimeoutManager
     _timeout_manager->erase(cntl->TimeoutId());
+    _timeout_manager->erase(cntl->BackupRequestId());
 
     // deserialize response
     if (!cntl->Failed())
