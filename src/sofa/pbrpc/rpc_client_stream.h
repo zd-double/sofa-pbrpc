@@ -59,15 +59,24 @@ public:
     {
         SOFA_PBRPC_FUNCTION_TRACE;
         uint64 sequence_id = cntl->SequenceId();
-        if (cntl->IsRetry() && !is_closed())
+        if (cntl->ErrorCode() == RPC_ERROR_BACKUP_REQUEST)
         {
+            if (is_closed())
+            {
+#if defined( LOG )
+            LOG(ERROR) << "call_method(): " << RpcEndpointToString(_remote_endpoint)
+                       << ": backup request failed for stream already closed: " << _error_message;
+#else
+            SLOG(ERROR, "call_method(): %s: backup request for stream already closed: %s",
+                    RpcEndpointToString(_remote_endpoint).c_str(), _error_message);
+#endif
+                return;
+            }
+            ScopedLocker<FastLock> _(_controller_map_lock);
+            _controller_map[sequence_id] = cntl;
+
             ReadBufferPtr request_buffer(new ReadBuffer());
             request_buffer->Append(cntl->RequestBuffer().get());
-            if (cntl->RpcClientStream().lock().get() != this)
-            {
-                ScopedLocker<FastLock> _(_controller_map_lock);
-                _controller_map[sequence_id] = cntl;
-            }
             async_send_message(request_buffer, cntl);
             return;
         }

@@ -25,11 +25,7 @@ namespace pbrpc {
 
 #define CompressTypeAuto ((CompressType)-1)
 
-typedef boost::function<void(const google::protobuf::MethodDescriptor* method,
-        google::protobuf::RpcController* controller,
-        const google::protobuf::Message* request,
-        const google::protobuf::Message* response,
-        google::protobuf::Closure* done)> BackupRequestCallback;
+typedef boost::function<void()> BackupRequestCallback;
 
 class RpcControllerImpl : public sofa::pbrpc::enable_shared_from_this<RpcControllerImpl>
 {
@@ -51,7 +47,6 @@ public:
         , _http_path(NULL)
         , _http_query_params(NULL)
         , _http_headers(NULL)
-        , _is_retry(false)
     {}
 
     virtual ~RpcControllerImpl() {}
@@ -480,16 +475,6 @@ public:
         return _backup_request_callback;
     }
 
-    void SetRetry()
-    {
-        _is_retry = true;
-    }
-
-    bool IsRetry()
-    {
-        return _is_retry;
-    }
-
 private:
     uint64 _sequence_id;
     std::string _method_id;
@@ -542,8 +527,6 @@ private:
     const std::string* _http_path;
     const std::map<std::string, std::string>* _http_query_params;
     const std::map<std::string, std::string>* _http_headers;
-
-    bool _is_retry;
 
     BackupRequestCallback _backup_request_callback;
 

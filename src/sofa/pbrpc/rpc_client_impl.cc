@@ -226,7 +226,7 @@ void RpcClientImpl::CallMethod(const google::protobuf::Message* request,
 
     // get the stream
     RpcClientStreamPtr stream = FindOrCreateStream(cntl->RemoteEndpoint());
-    if (cntl->IsRetry())
+    if (cntl->ErrorCode() == RPC_ERROR_BACKUP_REQUEST)
     {
         if (stream && stream->pending_buffer_size() < stream->max_pending_buffer_size())
         {

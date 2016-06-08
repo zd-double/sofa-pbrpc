@@ -195,7 +195,7 @@ void DynamicRpcChannelImpl::CallMethod(
     SCHECK(server->channel);
 
     server->last_request_seq = ++_request_count;
-    if (cntl->IsRetry())
+    if (cntl->ErrorCode() == RPC_ERROR_BACKUP_REQUEST)
     {
         server->channel->CallMethod(method, controller, request, response, done);
         CallDone(server, cntl);

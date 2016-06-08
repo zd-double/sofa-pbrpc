@@ -34,6 +34,7 @@ enum RpcErrorCode {
     RPC_ERROR_CREATE_STREAM = 20,
     RPC_ERROR_NOT_IN_RUNNING = 21,
     RPC_ERROR_SERVER_BUSY = 22,
+    RPC_ERROR_BACKUP_REQUEST = 23,
 
     // error code for listener
     RPC_ERROR_TOO_MANY_OPEN_FILES = 101,

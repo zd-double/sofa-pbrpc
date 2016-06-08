@@ -83,16 +83,16 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
     RpcController* sofa_controller = dynamic_cast<RpcController*>(controller);
     SCHECK(sofa_controller != NULL); // should be sofa::pbrpc::RpcController
     RpcControllerImplPtr cntl = sofa_controller->impl();
-    if (cntl->IsRetry())
+    if (cntl->ErrorCode() == RPC_ERROR_BACKUP_REQUEST)
     {
         if (_resolve_address_succeed)
         {
             cntl->SetRemoteEndpoint(_remote_endpoint);
             _client_impl->CallMethod(request, response, cntl);
 #if defined( LOG )
-                LOG(INFO) << "CallMethod(): retry on address " << RpcEndpointToString(_remote_endpoint);
+                LOG(INFO) << "CallMethod(): backup request on address " << RpcEndpointToString(_remote_endpoint);
 #else
-                SLOG(INFO, "CallMethod(): retry on address %s", RpcEndpointToString(_remote_endpoint).c_str());
+                SLOG(INFO, "CallMethod(): backup request on address %s", RpcEndpointToString(_remote_endpoint).c_str());
 #endif    
         }
         return;

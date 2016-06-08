@@ -264,12 +264,9 @@ private:
         RpcControllerImplPtr cntl = weak_cntl.lock();
         if (cntl)
         {
-            cntl->SetRetry();
+            cntl->SetFailed(RPC_ERROR_BACKUP_REQUEST, "backup request");
             const BackupRequestCallback callback = cntl->backup_request_callback();
-            RpcController controller;
-            RpcControllerImplPtr new_cntl = controller.impl(); 
-            new_cntl = cntl;
-            callback(NULL, &controller, NULL, NULL, NULL);
+            callback();
         }
     }
 
