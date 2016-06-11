@@ -195,7 +195,7 @@ void DynamicRpcChannelImpl::CallMethod(
     SCHECK(server->channel);
 
     server->last_request_seq = ++_request_count;
-    if (cntl->IsRetry())
+    if (!cntl->IsDone() && cntl->IsBackupRequest())
     {
         server->channel->CallMethod(method, controller, request, response, done);
         CallDone(server, cntl);
@@ -207,7 +207,7 @@ void DynamicRpcChannelImpl::CallMethod(
         done = ::sofa::pbrpc::NewClosure(shared_from_this(),
                 &DynamicRpcChannelImpl::AsyncCallback, server, cntl, done);
     }
-    cntl->set_backup_request_callback(boost::bind(&DynamicRpcChannelImpl::CallMethod, 
+    cntl->SetBackupRequestCallback(boost::bind(&DynamicRpcChannelImpl::CallMethod, 
                 shared_from_this(), method, controller, request, response, done));
     server->channel->CallMethod(method, controller, request, response, done);
     if (done == NULL) {

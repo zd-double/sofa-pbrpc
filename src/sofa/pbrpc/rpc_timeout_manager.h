@@ -79,19 +79,23 @@ public:
         bool is_backup_request = false;
         const PTime& expiration = cntl->Expiration();
         const PTime& backup_request_expiration = cntl->BackupRequestExpiration();
-        int64 expiration_ticks = (expiration - _epoch_time).ticks();
-        int64 backup_request_expiration_ticks = (backup_request_expiration - _epoch_time).ticks();
         if (expiration.is_special() || expiration <= _epoch_time)
         {
             cntl->SetTimeoutId(0u);
             return false;
         }
-        if (!backup_request_expiration.is_special() && backup_request_expiration > _epoch_time
-                && backup_request_expiration_ticks <  expiration_ticks)
+        if (backup_request_expiration.is_special() || backup_request_expiration <= _epoch_time)
+        {
+            cntl->SetBackupRequestId(0u);
+            return false;
+        }
+        if (cntl->BackupRequestMs() != 0)
         {
             is_backup_request = true;
         }
 
+        int64 expiration_ticks = (expiration - _epoch_time).ticks();
+        int64 backup_request_expiration_ticks = (backup_request_expiration - _epoch_time).ticks();
         {
             ScopedLocker<FastLock> _(_add_list_lock);
             if (is_backup_request)
@@ -264,12 +268,9 @@ private:
         RpcControllerImplPtr cntl = weak_cntl.lock();
         if (cntl)
         {
-            cntl->SetRetry();
+            cntl->SetBackupRequest();
             const BackupRequestCallback callback = cntl->backup_request_callback();
-            RpcController controller;
-            RpcControllerImplPtr new_cntl = controller.impl(); 
-            new_cntl = cntl;
-            callback(NULL, &controller, NULL, NULL, NULL);
+            callback();
         }
     }
 

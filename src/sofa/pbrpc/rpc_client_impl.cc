@@ -226,11 +226,15 @@ void RpcClientImpl::CallMethod(const google::protobuf::Message* request,
 
     // get the stream
     RpcClientStreamPtr stream = FindOrCreateStream(cntl->RemoteEndpoint());
-    if (cntl->IsRetry())
+    if (!cntl->IsDone() && cntl->IsBackupRequest())
     {
         if (stream && stream->pending_buffer_size() < stream->max_pending_buffer_size())
         {
-            cntl->SetRpcClientStream(stream);
+            RpcClientStreamPtr uncompleted_stream = cntl->RpcClientStream().lock();
+            if (uncompleted_stream != stream)
+            {
+                cntl->SetBackupRequestStream(stream);
+            }
             stream->call_method(cntl);
         }
         return;
@@ -435,7 +439,23 @@ void RpcClientImpl::DoneCallback(google::protobuf::Message* response,
 {
     // erase from RpcTimeoutManager
     _timeout_manager->erase(cntl->TimeoutId());
-    _timeout_manager->erase(cntl->BackupRequestId());
+    if (cntl->BackupRequestId())
+    {
+        _timeout_manager->erase(cntl->BackupRequestId());
+    }
+    if (cntl->IsBackupRequest())
+    {
+        RpcClientStreamPtr stream = cntl->RpcClientStream().lock();
+        if (stream)
+        {
+            stream->erase_request(cntl->SequenceId());
+        }
+        RpcClientStreamPtr backup_request_stream = cntl->BackupRequestStream().lock();
+        if (backup_request_stream)
+        {
+            backup_request_stream->erase_request(cntl->SequenceId());
+        }
+    }
 
     // deserialize response
     if (!cntl->Failed())

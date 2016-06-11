@@ -79,22 +79,25 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
                                       ::google::protobuf::Message* response,
                                       ::google::protobuf::Closure* done)
 {
+    ++_wait_count;
+
     // prepare controller
     RpcController* sofa_controller = dynamic_cast<RpcController*>(controller);
     SCHECK(sofa_controller != NULL); // should be sofa::pbrpc::RpcController
     RpcControllerImplPtr cntl = sofa_controller->impl();
-    if (cntl->IsRetry())
+    if (!cntl->IsDone() && cntl->IsBackupRequest())
     {
         if (_resolve_address_succeed)
         {
             cntl->SetRemoteEndpoint(_remote_endpoint);
             _client_impl->CallMethod(request, response, cntl);
 #if defined( LOG )
-                LOG(INFO) << "CallMethod(): retry on address " << RpcEndpointToString(_remote_endpoint);
+                LOG(INFO) << "CallMethod(): backup request on address " << RpcEndpointToString(_remote_endpoint);
 #else
-                SLOG(INFO, "CallMethod(): retry on address %s", RpcEndpointToString(_remote_endpoint).c_str());
+                SLOG(INFO, "CallMethod(): backup request on address %s", RpcEndpointToString(_remote_endpoint).c_str());
 #endif    
         }
+        --_wait_count;
         return;
     }
     cntl->PushDoneCallback(boost::bind(&SimpleRpcChannelImpl::DoneCallback,
@@ -158,10 +161,9 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
     cntl->StartTimer();
     if (!cntl->backup_request_callback())
     {
-        cntl->set_backup_request_callback(boost::bind(&SimpleRpcChannelImpl::CallMethod,
-                shared_from_this(), method, controller, request, response, done));
+        cntl->SetBackupRequestCallback(boost::bind(&SimpleRpcChannelImpl::CallMethod,
+                    shared_from_this(), method, controller, request, response, done));
     }
-    ++_wait_count;
     _client_impl->CallMethod(request, response, cntl);
     WaitDone(cntl);
 }
