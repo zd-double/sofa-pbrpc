@@ -25,12 +25,6 @@ namespace pbrpc {
 
 #define CompressTypeAuto ((CompressType)-1)
 
-//typedef boost::function<void(const google::protobuf::MethodDescriptor* method,
-//        google::protobuf::RpcController* controller,
-//        const google::protobuf::Message* request,
-//        const google::protobuf::Message* response,
-//        google::protobuf::Closure* done)> BackupRequestCallback;
-
 typedef boost::function<void()> BackupRequestCallback;
 
 class RpcControllerImpl : public sofa::pbrpc::enable_shared_from_this<RpcControllerImpl>
@@ -381,7 +375,7 @@ public:
         _backup_request_callback = callback;
     }
 
-    const BackupRequestCallback& backup_request_callback()
+    const BackupRequestCallback& BackupRequestCallback()
     {
         return _backup_request_callback;
     }
