@@ -85,21 +85,6 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
     RpcController* sofa_controller = dynamic_cast<RpcController*>(controller);
     SCHECK(sofa_controller != NULL); // should be sofa::pbrpc::RpcController
     RpcControllerImplPtr cntl = sofa_controller->impl();
-    if (!cntl->IsDone() && cntl->IsBackupRequest())
-    {
-        if (_resolve_address_succeed)
-        {
-            cntl->SetRemoteEndpoint(_remote_endpoint);
-            _client_impl->CallMethod(request, response, cntl);
-#if defined( LOG )
-                LOG(INFO) << "CallMethod(): backup request on address " << RpcEndpointToString(_remote_endpoint);
-#else
-                SLOG(INFO, "CallMethod(): backup request on address %s", RpcEndpointToString(_remote_endpoint).c_str());
-#endif    
-        }
-        --_wait_count;
-        return;
-    }
     cntl->PushDoneCallback(boost::bind(&SimpleRpcChannelImpl::DoneCallback,
                 shared_from_this(), done, _1));
     cntl->FillFromMethodDescriptor(method);
@@ -159,10 +144,10 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
     // ready, go ahead to do real call
     cntl->SetRemoteEndpoint(_remote_endpoint);
     cntl->StartTimer();
-    if (!cntl->backup_request_callback())
+    if (!cntl->BackupRequestCallback())
     {
-        cntl->SetBackupRequestCallback(boost::bind(&SimpleRpcChannelImpl::CallMethod,
-                    shared_from_this(), method, controller, request, response, done));
+        cntl->SetBackupRequestCallback(boost::bind(&SimpleRpcChannelImpl::SendBackupRequest,
+                    shared_from_this(), _1));
     }
     _client_impl->CallMethod(request, response, cntl);
     WaitDone(cntl);
@@ -171,6 +156,36 @@ void SimpleRpcChannelImpl::CallMethod(const ::google::protobuf::MethodDescriptor
 uint32 SimpleRpcChannelImpl::WaitCount()
 {
     return _wait_count;
+}
+
+void SimpleRpcChannelImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
+{
+    ++_wait_count;
+    if (!_resolve_address_succeed)
+    {
+#if defined( LOG )
+        LOG(ERROR) << "SendBackupRequest(): resolve address failed: " << _server_address;
+#else
+        SLOG(ERROR, "SendBackupRequest(): resolve address failed: %s", _server_address.c_str());
+#endif
+        return;
+    }
+    if (cntl->IsSendBackupRequest() && !cntl->IsDone())
+    {
+        cntl->SetRemoteEndpoint(_remote_endpoint);
+        _client_impl->SendBackupRequest(cntl);
+        WaitDone(cntl);
+
+#if defined( LOG )
+        LOG(INFO) << "SendBackupRequest(): send backup request on address "
+                  << RpcEndpointToString(_remote_endpoint);
+#else
+        SLOG(INFO, "SendBackupRequest(): send backup request on address %s",
+                RpcEndpointToString(_remote_endpoint).c_str());
+#endif
+    }
+    --_wait_count;
+    return;
 }
 
 void SimpleRpcChannelImpl::WaitDone(const RpcControllerImplPtr& cntl)

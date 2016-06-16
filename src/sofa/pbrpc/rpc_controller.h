@@ -66,8 +66,12 @@ public:
     // * set in the service proto options (default value is 10 seconds)
     int64 Timeout() const;
 
+    // Set the delay to send backup request in milli-seconds.
+    // If RPC does not finish after backup_request_ms, backup request will be send.
+    // It should be set backup_request_ms >= 0 and backup_request_ms < timeout.
     void SetBackupRequestMs(int64 backup_request_ms);
     
+    // Get the delay to send backup request in milli-seconds.
     int64 BackupRequestMs();
 
     // Set compress type of the request message.

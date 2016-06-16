@@ -226,19 +226,6 @@ void RpcClientImpl::CallMethod(const google::protobuf::Message* request,
 
     // get the stream
     RpcClientStreamPtr stream = FindOrCreateStream(cntl->RemoteEndpoint());
-    if (!cntl->IsDone() && cntl->IsBackupRequest())
-    {
-        if (stream && stream->pending_buffer_size() < stream->max_pending_buffer_size())
-        {
-            RpcClientStreamPtr uncompleted_stream = cntl->RpcClientStream().lock();
-            if (uncompleted_stream != stream)
-            {
-                cntl->SetBackupRequestStream(stream);
-            }
-            stream->call_method(cntl);
-        }
-        return;
-    }
     if (!stream)
     {
 #if defined( LOG )
@@ -377,6 +364,53 @@ bool RpcClientImpl::ResolveAddress(const std::string& address,
     return sofa::pbrpc::ResolveAddress(_work_thread_group->io_service(), address, endpoint);
 }
 
+void RpcClientImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
+{
+    if (!_is_running)
+    {
+#if defined( LOG )
+        LOG(ERROR) << "SendBackupRequest(): client not in running, ignore";
+#else
+        SLOG(ERROR, "SendBackupRequest(): client not in running, ignore");
+#endif
+        return;
+    }
+
+    // get the stream
+    RpcClientStreamPtr stream = FindOrCreateStream(cntl->RemoteEndpoint());
+    if (!stream)
+    {
+#if defined( LOG )
+        LOG(ERROR) << "SendBackupRequest(): create socket stream failed: "
+                   << RpcEndpointToString(cntl->RemoteEndpoint());
+#else
+        SLOG(ERROR, "SendBackupRequest(): create socket stream failed: %s",
+                RpcEndpointToString(cntl->RemoteEndpoint()).c_str());
+#endif
+        return;
+    }
+    if (stream->pending_buffer_size() >= stream->max_pending_buffer_size())
+    {
+#if defined( LOG )
+#else
+        SLOG(DEBUG, "SendBackupRequest(): pending buffer full: %s",
+                RpcEndpointToString(cntl->RemoteEndpoint()).c_str());
+#endif
+        return;
+    }
+
+    if (cntl->IsSendBackupRequest() && !cntl->IsDone())
+    {
+        RpcClientStreamPtr unfinished_stream = cntl->RpcClientStream().lock();
+        if (unfinished_stream != stream)
+        {
+            cntl->SetBackupRequestStream(stream);
+        }
+        stream->call_method(cntl);
+    }
+    return;
+}
+
 RpcClientStreamPtr RpcClientImpl::FindOrCreateStream(const RpcEndpoint& remote_endpoint)
 {
     RpcClientStreamPtr stream;
@@ -439,22 +473,9 @@ void RpcClientImpl::DoneCallback(google::protobuf::Message* response,
 {
     // erase from RpcTimeoutManager
     _timeout_manager->erase(cntl->TimeoutId());
-    if (cntl->BackupRequestId())
+    if (cntl->BackupRequestId() != 0)
     {
         _timeout_manager->erase(cntl->BackupRequestId());
-    }
-    if (cntl->IsBackupRequest())
-    {
-        RpcClientStreamPtr stream = cntl->RpcClientStream().lock();
-        if (stream)
-        {
-            stream->erase_request(cntl->SequenceId());
-        }
-        RpcClientStreamPtr backup_request_stream = cntl->BackupRequestStream().lock();
-        if (backup_request_stream)
-        {
-            backup_request_stream->erase_request(cntl->SequenceId());
-        }
     }
 
     // deserialize response
@@ -531,8 +552,8 @@ void RpcClientImpl::TimerMaintain(const PTime& now)
         // flow control in
         if (_slice_quota_in != -1)
         {
-            // reset quota pool
-            _flow_controller->reset_read_quota(_slice_quota_in);
+            // recharge quota pool
+            _flow_controller->recharge_read_quota(_slice_quota_in);
 
             // collect streams need to trigger
             std::vector<FlowControlItem> trigger_list;
@@ -566,8 +587,8 @@ void RpcClientImpl::TimerMaintain(const PTime& now)
         // flow control out
         if (_slice_quota_out != -1)
         {
-            // reset quota pool
-            _flow_controller->reset_write_quota(_slice_quota_out);
+            // recharge quota pool
+            _flow_controller->recharge_write_quota(_slice_quota_out);
 
             // collect streams need to trigger
             std::vector<FlowControlItem> trigger_list;

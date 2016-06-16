@@ -71,9 +71,11 @@ public:
         _timer_worker.reset();
     }
 
-    // Add a timeout event.
+    // Add timeout and backup-request event.
     // If "expiration" of the "cntl" is a special value or already timeout, return false.
     // Else put the "cntl" into the manager, and return true.
+    // If "backup_request_expiration" is not a special value and not already timeout,
+    // then add backup-request event.
     bool add(const RpcControllerImplPtr& cntl)
     {
         bool is_backup_request = false;
@@ -84,12 +86,7 @@ public:
             cntl->SetTimeoutId(0u);
             return false;
         }
-        if (backup_request_expiration.is_special() || backup_request_expiration <= _epoch_time)
-        {
-            cntl->SetBackupRequestId(0u);
-            return false;
-        }
-        if (cntl->BackupRequestMs() != 0)
+        if (!backup_request_expiration.is_special() && backup_request_expiration > _epoch_time)
         {
             is_backup_request = true;
         }
@@ -102,11 +99,11 @@ public:
             {
                 uint64 backup_request_id = _next_id++;
                 cntl->SetBackupRequestId(backup_request_id);
-                _add_list.push_back(Event(backup_request_id, backup_request_expiration_ticks, cntl));
+                _add_list.push_back(Event(backup_request_id, backup_request_expiration_ticks, cntl, BACKUP_REQUEST));
             }
             uint64 timeout_id = _next_id++;
             cntl->SetTimeoutId(timeout_id);
-            _add_list.push_back(Event(timeout_id, expiration_ticks, cntl));
+            _add_list.push_back(Event(timeout_id, expiration_ticks, cntl, TIMEOUT));
         }
         return true;
     }
@@ -162,7 +159,7 @@ private:
             {
                 if (add_it->expiration <= now_ticks)
                 {
-                    if (add_it->id == add_it->cntl.lock()->BackupRequestId())
+                    if (add_it->type == BACKUP_REQUEST)
                     {
                         notify_backup_request(add_it->cntl);
                     }
@@ -196,7 +193,7 @@ private:
         {
             if (add_it->expiration <= now_ticks)
             {
-                if (add_it->id == add_it->cntl.lock()->BackupRequestId())
+                if (add_it->type == BACKUP_REQUEST)
                 {
                     notify_backup_request(add_it->cntl);
                 }
@@ -226,10 +223,8 @@ private:
         for (ExpirationIndex::iterator exp_it = exp_index.begin();
                 exp_it != exp_end; ++exp_it)
         {
-
-            RpcControllerImplPtr cntl = exp_it->cntl.lock();
-
-            if (exp_it->id == exp_it->cntl.lock()->BackupRequestId())
+            //RpcControllerImplPtr cntl = exp_it->cntl.lock();
+            if (exp_it->type == BACKUP_REQUEST)
             {
                 notify_backup_request(exp_it->cntl);
             }
@@ -260,6 +255,16 @@ private:
             {
                 stream->erase_request(cntl->SequenceId());
             }
+
+            // erase from BackupRequestStream if backup request is sent
+            if (cntl->IsSendBackupRequest())
+            {
+                RpcClientStreamPtr backup_request_stream = cntl->RpcClientStream().lock();
+                if (backup_request_stream)
+                {
+                    backup_request_stream->erase_request(cntl->SequenceId());
+                }
+            }
         }
     }
     
@@ -268,27 +273,35 @@ private:
         RpcControllerImplPtr cntl = weak_cntl.lock();
         if (cntl)
         {
-            cntl->SetBackupRequest();
-            const BackupRequestCallback callback = cntl->backup_request_callback();
-            callback();
+            cntl->SetSendBackupRequest();
+            const RpcBackupRequestCallback backup_request_callback = cntl->BackupRequestCallback();
+            backup_request_callback(cntl);
         }
     }
 
 private:
+    enum EventType
+    {
+        TIMEOUT = 1,
+        BACKUP_REQUEST = 2,
+    };
+
     struct Event
     {
         uint64 id; // 0 means invalid id
         int64 expiration;
         RpcControllerImplWPtr cntl;
-        Event(uint64 i, int64 e, const RpcControllerImplWPtr& c)
-            : id(i), expiration(e), cntl(c) {}
+        EventType type;
+        Event(uint64 i, int64 e, const RpcControllerImplWPtr& c, EventType t)
+            : id(i), expiration(e), cntl(c), type(t) {}
         Event(const Event& o)
-            : id(o.id), expiration(o.expiration), cntl(o.cntl) {}
+            : id(o.id), expiration(o.expiration), cntl(o.cntl), type(o.type) {}
         Event& operator=(const Event& o) {
             if (this != &o) {
                 id = o.id;
                 expiration = o.expiration;
                 cntl = o.cntl;
+                type = o.type;
             }
             return *this;
         }
@@ -296,6 +309,7 @@ private:
             std::swap(id, o.id);
             std::swap(expiration, o.expiration);
             cntl.swap(o.cntl);
+            std::swap(type, o.type);
         }
     };
 

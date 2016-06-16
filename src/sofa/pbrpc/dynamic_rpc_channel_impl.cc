@@ -194,21 +194,15 @@ void DynamicRpcChannelImpl::CallMethod(
     }
     SCHECK(server->channel);
 
-    server->last_request_seq = ++_request_count;
-    if (!cntl->IsDone() && cntl->IsBackupRequest())
-    {
-        server->channel->CallMethod(method, controller, request, response, done);
-        CallDone(server, cntl);
-        return;
-    }
     // Call method.
     if (done != NULL) {
         // async call, replace callback with AsyncCallback
         done = ::sofa::pbrpc::NewClosure(shared_from_this(),
                 &DynamicRpcChannelImpl::AsyncCallback, server, cntl, done);
     }
-    cntl->SetBackupRequestCallback(boost::bind(&DynamicRpcChannelImpl::CallMethod, 
-                shared_from_this(), method, controller, request, response, done));
+    server->last_request_seq = ++_request_count;
+    cntl->SetBackupRequestCallback(boost::bind(&DynamicRpcChannelImpl::SendBackupRequest,
+                shared_from_this(), _1));
     server->channel->CallMethod(method, controller, request, response, done);
     if (done == NULL) {
         // sync call
@@ -363,6 +357,67 @@ void DynamicRpcChannelImpl::OnAddressRemoved(const std::vector<std::string>& add
 #endif
         }
     }
+}
+
+void DynamicRpcChannelImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
+{
+    ++_wait_count;
+
+    // Choose an server.
+    // If the server's channel is not created, then create it first.
+    ServerContextPtr server;
+    RpcErrorCode choose_ret;
+    int retry_count = 0;
+    while (true) {
+        choose_ret = ChooseServer(server, retry_count + 1);
+        if (choose_ret == RPC_SUCCESS){
+            if (server->InitChannel(_client_impl, _options)) {
+                // init ok
+                break;
+            }
+            else  {
+#if defined( LOG )
+                LOG(ERROR) << "SendBackupRequest(): init channel failed: ["
+                           << server->server_address << "]";
+#else
+                SLOG(ERROR, "SendBackupRequest(): init channel failed: [%s]",
+                        server->server_address.c_str());
+#endif
+                MoveToUnlive(server->server_address, "init channel failed");
+                choose_ret = RPC_ERROR_SERVER_UNAVAILABLE;
+                server.reset();
+            }
+        }
+        // check retry count
+        if (retry_count >= kRetryCount) {
+            // retry out
+            server.reset();
+            break;
+        }
+        // sleep to retry
+        usleep(kRetryInterval * 1000);
+        ++retry_count;
+    }
+
+    if (!server || !server->channel)
+    {
+#if defined( LOG )
+        LOG(ERROR) << "SendBackupRequest(): choose server failed with retry_count="
+                   << retry_count << ": " << RpcErrorCodeToString(choose_ret);
+#else
+        SLOG(ERROR, "SendBackupRequest(): choose server failed with retry_count=%d: %s",
+                retry_count, RpcErrorCodeToString(choose_ret));
+#endif
+        return;
+    }
+
+    if (cntl->IsSendBackupRequest() && !cntl->IsDone())
+    {
+        server->last_request_seq = ++_request_count;
+        server->channel->SendBackupRequest(cntl);
+        CallDone(server, cntl);
+    }
+    return;
 }
 
 void DynamicRpcChannelImpl::CallDone(

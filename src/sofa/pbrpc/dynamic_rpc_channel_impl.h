@@ -102,6 +102,8 @@ public:
 
     void OnAddressRemoved(const std::vector<std::string>& address_list);
 
+    void SendBackupRequest(const RpcControllerImplPtr& cntl);
+
 private:
     void CallDone(const ServerContextPtr& server,
                   const RpcControllerImplPtr& cntl);

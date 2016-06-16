@@ -40,6 +40,8 @@ public:
 
     virtual uint32 WaitCount();
 
+    void SendBackupRequest(const RpcControllerImplPtr& cntl);
+
 private:
     static void WaitDone(const RpcControllerImplPtr& cntl);
 

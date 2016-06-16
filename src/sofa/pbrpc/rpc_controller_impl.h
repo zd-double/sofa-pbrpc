@@ -25,7 +25,7 @@ namespace pbrpc {
 
 #define CompressTypeAuto ((CompressType)-1)
 
-typedef boost::function<void()> BackupRequestCallback;
+typedef boost::function<void(const RpcControllerImplPtr& cntl)> RpcBackupRequestCallback;
 
 class RpcControllerImpl : public sofa::pbrpc::enable_shared_from_this<RpcControllerImpl>
 {
@@ -48,6 +48,7 @@ public:
         , _http_path(NULL)
         , _http_query_params(NULL)
         , _http_headers(NULL)
+        , _is_send_backup_request(false)
     {}
 
     virtual ~RpcControllerImpl() {}
@@ -85,15 +86,14 @@ public:
             _user_options.timeout : _auto_options.timeout;
     }
 
-    void SetBackupRequestMs(int64 timeout)
+    void SetBackupRequestMs(int64 backup_request_ms)
     {
-        _user_options.backup_request_ms = timeout;
+        _user_options.backup_request_ms = backup_request_ms;
     }
     
     int64 BackupRequestMs()
     {
-        return _user_options.backup_request_ms > 0 ?
-            _user_options.backup_request_ms : 0;
+        return _user_options.backup_request_ms;
     }
 
     bool Failed() const
@@ -370,12 +370,12 @@ public:
         _request_sent_time = ptime_now();
     }
 
-    void SetBackupRequestCallback(const BackupRequestCallback& callback)
+    void SetBackupRequestCallback(const RpcBackupRequestCallback& callback)
     {
         _backup_request_callback = callback;
     }
 
-    const BackupRequestCallback& BackupRequestCallback()
+    const RpcBackupRequestCallback& BackupRequestCallback()
     {
         return _backup_request_callback;
     }
@@ -389,14 +389,14 @@ public:
         return _backup_request_stream;
     }
 
-    void SetBackupRequest()
+    void SetSendBackupRequest()
     {
-        _is_backup_request = true;
+        _is_send_backup_request = true;
     }
 
-    bool IsBackupRequest() const
+    bool IsSendBackupRequest() const
     {
-        return _is_backup_request;
+        return _is_send_backup_request;
     }
 
 
@@ -531,7 +531,7 @@ private:
         CompressType response_compress_type;
         RequestOptions() :
             timeout(0),
-            backup_request_ms(0),
+            backup_request_ms(-1),
             request_compress_type(CompressTypeAuto),
             response_compress_type(CompressTypeAuto) {}
     };
@@ -550,8 +550,8 @@ private:
     const std::map<std::string, std::string>* _http_query_params;
     const std::map<std::string, std::string>* _http_headers;
 
-    BackupRequestCallback _backup_request_callback;
-    bool _is_backup_request;
+    RpcBackupRequestCallback _backup_request_callback;
+    bool _is_send_backup_request;
 
     SOFA_PBRPC_DISALLOW_EVIL_CONSTRUCTORS(RpcControllerImpl);
 }; // class RpcControllerImpl

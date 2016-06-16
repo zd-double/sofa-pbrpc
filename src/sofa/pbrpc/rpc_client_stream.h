@@ -59,16 +59,16 @@ public:
     {
         SOFA_PBRPC_FUNCTION_TRACE;
         uint64 sequence_id = cntl->SequenceId();
-        if (!cntl->IsDone() && cntl->IsBackupRequest())
+        if (cntl->IsSendBackupRequest())
         {
             if (is_closed())
             {
 #if defined( LOG )
-            LOG(ERROR) << "call_method(): " << RpcEndpointToString(_remote_endpoint)
-                       << ": backup request failed for stream already closed: " << _error_message;
+                LOG(ERROR) << "call_method(): " << RpcEndpointToString(_remote_endpoint)
+                           << ": backup request failed for stream already closed: " << _error_message;
 #else
-            SLOG(ERROR, "call_method(): %s: backup request for stream already closed: %s",
-                    RpcEndpointToString(_remote_endpoint).c_str(), _error_message);
+                SLOG(ERROR, "call_method(): %s: backup request for stream already closed: %s",
+                        RpcEndpointToString(_remote_endpoint).c_str(), _error_message);
 #endif
                 return;
             }
@@ -81,7 +81,10 @@ public:
 
             ReadBufferPtr request_buffer(new ReadBuffer());
             request_buffer->Append(cntl->RequestBuffer().get());
-            async_send_message(request_buffer, cntl);
+            if (!cntl->IsDone())
+            {
+                async_send_message(request_buffer, cntl);
+            }
             return;
         }
 
@@ -129,7 +132,13 @@ private:
         for (ControllerMap::iterator it = tmp_map.begin();
                 it != tmp_map.end(); ++it)
         {
-            it->second->Done(RPC_ERROR_CONNECTION_CLOSED, _error_message);
+            RpcControllerImplPtr& cntl = it->second;
+            if (!cntl->IsDone() && cntl->IsSendBackupRequest())
+            {
+                clear_backup_request(cntl);
+                cntl->SetRemoteEndpoint(remote_endpoint());
+            }
+            cntl->Done(RPC_ERROR_CONNECTION_CLOSED, _error_message);
         }
 
         if (_closed_stream_callback)
@@ -175,6 +184,14 @@ private:
         {
             ScopedLocker<FastLock> _(_controller_map_lock);
             _controller_map.erase(sequence_id);
+        }
+
+        // If send message failed when backup request is sent,
+        // should clear backup request in another stream
+        if (cntl->IsSendBackupRequest())
+        {
+            clear_backup_request(cntl);
+            cntl->SetRemoteEndpoint(remote_endpoint());
         }
 
         cntl->Done(error_code, _error_message);
@@ -260,6 +277,12 @@ private:
             return;
         }
 
+        if (cntl->IsSendBackupRequest())
+        {
+            clear_backup_request(cntl);
+            cntl->SetRemoteEndpoint(remote_endpoint());
+        }
+
         if (!meta.has_failed())
         {
 #if defined( LOG )
@@ -310,6 +333,23 @@ private:
             cntl->SetResponseCompressType(meta.has_compress_type() ?
                     meta.compress_type() : CompressTypeNone);
             cntl->Done(RPC_SUCCESS, "succeed");
+        }
+    }
+
+    void clear_backup_request(const RpcControllerImplPtr& cntl)
+    {
+        RpcClientStreamPtr backup_request_stream = cntl->BackupRequestStream().lock();
+        if (backup_request_stream)
+        {
+            if (backup_request_stream.get() != this)
+            {
+                backup_request_stream->erase_request(cntl->SequenceId());
+            }
+            else
+            {
+                RpcClientStreamPtr stream = cntl->RpcClientStream().lock();
+                stream->erase_request(cntl->SequenceId());
+            }
         }
     }
 

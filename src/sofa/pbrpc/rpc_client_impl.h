@@ -56,6 +56,8 @@ public:
     bool ResolveAddress(const std::string& address,
             RpcEndpoint* endpoint);
 
+    void SendBackupRequest(const RpcControllerImplPtr& cntl);
+
 private:
     // Get stream for "remote_endpoint".  Return null ptr if failed.
     RpcClientStreamPtr FindOrCreateStream(const RpcEndpoint& remote_endpoint);
