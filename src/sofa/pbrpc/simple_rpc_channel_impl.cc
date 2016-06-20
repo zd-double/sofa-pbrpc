@@ -168,6 +168,7 @@ void SimpleRpcChannelImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
 #else
         SLOG(ERROR, "SendBackupRequest(): resolve address failed: %s", _server_address.c_str());
 #endif
+        --_wait_count;
         return;
     }
     if (cntl->IsSendBackupRequest() && !cntl->IsDone())

@@ -408,6 +408,7 @@ void DynamicRpcChannelImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
         SLOG(ERROR, "SendBackupRequest(): choose server failed with retry_count=%d: %s",
                 retry_count, RpcErrorCodeToString(choose_ret));
 #endif
+        --_wait_count;
         return;
     }
 
@@ -416,7 +417,9 @@ void DynamicRpcChannelImpl::SendBackupRequest(const RpcControllerImplPtr& cntl)
         server->last_request_seq = ++_request_count;
         server->channel->SendBackupRequest(cntl);
         CallDone(server, cntl);
+        return;
     }
+    --_wait_count;
     return;
 }
 
