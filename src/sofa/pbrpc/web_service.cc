@@ -279,6 +279,10 @@ Servlet WebService::FindServlet(const std::string& path)
         }
         const std::string& find_path = find->first;
         size_t find_path_size = find_path.size();
+        if (real_path.find(find_path) == std::string::npos)
+        {
+            continue;
+        }
         if (find_path_size <= path_size
             && strncmp(real_path.data(), find_path.data(), find_path_size) == 0
             && (find_path_size == path_size || real_path[find_path_size] == PATH_SPLITTER[0]))
