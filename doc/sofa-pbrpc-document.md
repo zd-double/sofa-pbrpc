@@ -36,9 +36,10 @@
 # 接口
 
 ## 主要接口类
-主要用户接口分为四个接口类和三个option
+主要用户接口分为四个接口类和三个option。
+
 <div  align="center">
-<img src="image/rpc_interface.png" width="80%" height="80%" />
+<img src="image/rpc-interface.png" width="80%" height="80%" />
 </div>
 ## 用户配置
 Server端配置：RpcServerOptions
@@ -260,7 +261,7 @@ int main()
 * RpcClientStream/RpcServerStream：代表client和server之间的连接，用于client和server的网络通信。
 * ThreadGroup：client和server内部线程池，用于io操作和执行回调。
 * TimeoutManager：采用订阅者模型，对rpc请求进行超时管理。
-* RpCListenser：接受来自client的连接请求，创建与client之间的连接。
+* RpcListenser：接受来自client的连接请求，创建与client之间的连接。
 * ServicePool：server端服务管理与路由。
 
 ## 设计原理
@@ -361,6 +362,7 @@ sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采�
 <div  align="center">
 <img src="image/flow-controller.png" width="80%" height="80%" />
 </div>
+
 <div  align="center">
 <img src="image/flow-controller-result.png" width="80%" height="80%" />
 </div>
