@@ -29,20 +29,27 @@
 * 支持webservice，用户快速定义web server处理逻辑
 * 支持profiling，实时查看程序的资源消耗，方便问题追查
 
-![输入图片说明](image/arch.png)
+<div  align="center">
+<img src="image/arch.png" width="80%" height="80%" />
+</div>
 
 # 接口
 
 ## 主要接口类
 主要用户接口分为四个接口类和三个option
-
-![输入图片说明](image/rpc-interface.png)
+<div  align="center">
+<img src="image/rpc_interface.png" width="80%" height="80%" />
+</div>
 ## 用户配置
 Server端配置：RpcServerOptions
-![输入图片说明](image/server-option.png)
+<div  align="center">
+<img src="image/server-option.png" width="80%" height="80%" />
+</div>
 
 Client端配置：RpcClientOptions
-![输入图片说明](image/client-option.png)
+<div  align="center">
+<img src="image/client-option.png" width="80%" height="80%" />
+</div>
 # 快速使用
 使用sofa-pbrpc只需要三步：
 * 定义通讯协议
@@ -262,12 +269,15 @@ int main()
 #### 网络协议栈
 
 在sofa-pbrpc中网络数据自上而下流划分为RpcClientStream/RpcServerStream、RpcMessageStream、RpcByteStream三层。字节流层主要负责网络通信相关的操作，操作对象为序列化后的二机制字节流；消息流层处理的对象是由header、meta和data组装的消息，负责消息级别的控制与统计；协议层负责异步发送请求和接收响应数据。采用这样协议栈方式的层次划分更加有利于数据协议的扩展。
-![输入图片说明](image/stream_layer.png)
+<div  align="center">
+<img src="image/stream_layer.png" width="80%" height="80%" />
+</div>
 
 #### RPC 协议
 一条rpc消息由RpcMessageHeader、RpcMeta和Data组成。
-
-![输入图片说明](image/rpc-header.png)
+<div  align="center">
+<img src="image/rpc-header.png" width="80%" height="80%" />
+</div>
 
 ```c++
 struct RpcMessageHeader {
@@ -316,29 +326,44 @@ message RpcMeta {
 4. server端RpcListener接收到client的连接，创建对应RpcServerStream。
 5. RpcServerStream接收数据，根据meta信息在ServerPool中选取对应Service.Method执行。
 6. server通过RpcServerStream发送执行结果，回复过程与请求过程类似。
-![输入图片说明](image/network-arch.png)
+<div  align="center">
+<img src="image/network-arch.png" width="80%" height="80%" />
+</div
 
 ### 线程模型
 asio异步模型，底层使用epoll。
-![输入图片说明](image/rpc-thread-1.png)
-![输入图片说明](image/rpc-thread-2.png)
+<div  align="center">
+<img src="image/rpc-thread-1.png" width="80%" height="80%" />
+</div>
+<div  align="center">
+<img src="image/rpc-thread-2.png" width="80%" height="80%" />
+</div>
 ### 缓冲区管理
 sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采用引用计数进行管理，减少不必要的内存拷贝。
-![输入图片说明](image/readbuf.png)
-![输入图片说明](image/writebuf.png)
+<div  align="center">
+<img src="image/readbuf.png" width="80%" height="80%" />
+</div>
+<div  align="center">
+<img src="image/writebuf.png" width="80%" height="80%" />
+</div>
 ### 透明压缩
 采用装饰着模式的透明压缩，易于扩展。
-![输入图片说明](image/rpc-compress.png)
+<div  align="center">
+<img src="image/rpc-compress.png" width="80%" height="80%" />
+</div>
 ### 超时管理
 使用lock+swap操作缩小临界区。
-
-![输入图片说明](image/timeout-manager.png)
+<div  align="center">
+<img src="image/timeout-manager.png" width="80%" height="80%" />
+</div>
 ### 流量控制
 按时间片分配流量配额，保证流控精准高效。
-
-![输入图片说明](image/flow-controller.png)
-
-![输入图片说明](image/flow-controller-result.png)
+<div  align="center">
+<img src="image/flow-controller.png" width="80%" height="80%" />
+</div>
+<div  align="center">
+<img src="image/flow-controller-result.png" width="80%" height="80%" />
+</div>
 # 技术特点
 ## 支持HTTP协议
 除了使用原生client访问server外，sofa-pbrpc也支持使用http协议访问server上的服务。同时，用户可以通过使用server端的WebService工具类，快速实现server的对于http请求的处理逻辑。
@@ -346,7 +371,9 @@ sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采�
 sofa-pbrpc支持用户使用http客户端向server发送json格式的数据请求，并返回json格式的响应。
 ## 提供丰富的工具类
 sofa-pbrpc提供常用工具类给开发者，包括：
-![输入图片说明](image/sofa-pbrpc-dev-tools.png)
+<div  align="center">
+<img src="image/sofa-pbrpc-dev-tools.png" width="80%" height="80%" />
+</div>
 
 # 支持团队
 百度网页搜索部开源团队 [opensearch@baidu.com](opensearch@baidu.com)
