@@ -247,7 +247,7 @@ int main()
 # 实现
 ## 系统结构
 
-<img src="image/basic_arch.png" width="100%" height="100%" />
+<img src="image/basic_arch.png" width="50%" height="50%" />
 
 * RpcClientStream/RpcServerStream：代表client和server之间的连接，用于client和server的网络通信。
 * ThreadGroup：client和server内部线程池，用于io操作和执行回调。
