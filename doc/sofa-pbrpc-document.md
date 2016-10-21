@@ -29,20 +29,20 @@
 * 支持webservice，用户快速定义web server处理逻辑
 * 支持profiling，实时查看程序的资源消耗，方便问题追查
 
-![输入图片说明](image/document/arch.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/arch.png "在这里输入图片标题")
 
 # 接口
 
 ## 主要接口类
 主要用户接口分为四个接口类和三个option
 
-![输入图片说明](image/document/rpc-interface.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-interface.png "在这里输入图片标题")
 ## 用户配置
 Server端配置：RpcServerOptions
-![输入图片说明](image/document/server-option.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/server-option.png "在这里输入图片标题")
 
 Client端配置：RpcClientOptions
-![输入图片说明](image/document/client-option.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/client-option.png "在这里输入图片标题")
 # 快速使用
 使用sofa-pbrpc只需要三步：
 * 定义通讯协议
@@ -266,7 +266,7 @@ int main()
 #### RPC 协议
 一条rpc消息由RpcMessageHeader、RpcMeta和Data组成。
 
-![输入图片说明](image/document/rpc-header.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-header.png "在这里输入图片标题")
 
 ```c++
 struct RpcMessageHeader {
@@ -319,23 +319,23 @@ message RpcMeta {
 
 ### 线程模型
 asio异步模型，底层使用epoll。
-![输入图片说明](image/document/rpc-thread-1.png "在这里输入图片标题")
-![输入图片说明](image/document/rpc-thread-2.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-thread-1.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-thread-2.png "在这里输入图片标题")
 ### 缓冲区管理
 sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采用引用计数进行管理，减少不必要的内存拷贝。
-![输入图片说明](image/document/readbuf.png "在这里输入图片标题")
-![输入图片说明](image/document/writebuf.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/readbuf.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/writebuf.png "在这里输入图片标题")
 ### 透明压缩
 采用装饰着模式的透明压缩，易于扩展。
-![输入图片说明](image/document/rpc-compress.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-compress.png "在这里输入图片标题")
 ### 超时管理
 使用lock+swap操作缩小临界区。
-![输入图片说明](image/document/timeout-manager.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/timeout-manager.png "在这里输入图片标题")
 ### 流量控制
 按时间片分配流量配额，保证流控精准高效。
 
-![输入图片说明](image/document/flow-controller.png "在这里输入图片标题")
-![输入图片说明](image/document/flow-controller-result.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/flow-controller.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/flow-controller-result.png "在这里输入图片标题")
 # 技术特点
 ## 支持HTTP协议
 除了使用原生client访问server外，sofa-pbrpc也支持使用http协议访问server上的服务。同时，用户可以通过使用server端的WebService工具类，快速实现server的对于http请求的处理逻辑。
@@ -343,7 +343,7 @@ sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采�
 sofa-pbrpc支持用户使用http客户端向server发送json格式的数据请求，并返回json格式的响应。
 ## 提供丰富的工具类
 sofa-pbrpc提供常用工具类给开发者，包括：
-![输入图片说明](image/document/sofa-pbrpc-dev-tools.png	 "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/sofa-pbrpc-dev-tools.png	 "在这里输入图片标题")
 # 性能
 ## 测试环境
 * cpu 16core
@@ -352,11 +352,11 @@ sofa-pbrpc提供常用工具类给开发者，包括：
 
 ## 吞吐
 
-![输入图片说明](image/document/bench_qps.jpg	 "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/bench_qps.jpg	 "在这里输入图片标题")
 
 ## 延迟
 
-![输入图片说明](image/document/bench_delay.jpg	 "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/bench_delay.jpg	 "在这里输入图片标题")
 
 # 支持团队
 百度网页搜索部开源团队 [opensearch@baidu.com](opensearch@baidu.com)
