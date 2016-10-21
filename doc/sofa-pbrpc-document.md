@@ -261,7 +261,7 @@ int main()
 #### 网络协议栈
 
 在sofa-pbrpc中网络数据自上而下流划分为RpcClientStream/RpcServerStream、RpcMessageStream、RpcByteStream三层。消息流层主要负责网络通信相关的操作，操作对象为序列化之后的二机制字节流；消息流层处理的对象是由header、meta和data组装的消息，负责消息级别的控制与统计；协议层负责异步发送接受请求和响应数据。采用这样协议栈方式的层次划分更加有利于数据协议的扩展。
-![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_documen/image/document/stream_layer.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/stream_layer.png "在这里输入图片标题")
 
 #### RPC 协议
 一条rpc消息由RpcMessageHeader、RpcMeta和Data组成。
@@ -315,10 +315,10 @@ message RpcMeta {
 4. server端RpcListener接收到client的请求，创建对应RpcServerStream。
 5. RpcServerStream接收数据，根据meta信息在ServerPool中选取对应Service.Method执行。
 6. server通过RpcServerStream发送执行结果，回复过程与请求过程类似。
-![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_documen/image/document/network-arch.png "在这里输入图片标题")
+![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/network-arch.png "在这里输入图片标题")
 
 ### 线程模型
-asio异步模型，底层使用epoll。
+asio异步模型，底层使用epollt。
 ![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-thread-1.png "在这里输入图片标题")
 ![输入图片说明](https://github.com/zd-double/sofa-pbrpc/blob/add_document/image/document/rpc-thread-2.png "在这里输入图片标题")
 ### 缓冲区管理
