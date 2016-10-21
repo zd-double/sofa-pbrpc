@@ -360,7 +360,7 @@ sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采�
 ### 流量控制
 按时间片分配流量配额，保证流控精准高效。
 <div  align="center">
-<img src="image/flow-controller.png" width="80%" height="80%" />
+<img src="image/flow-controller.png" width="60%" height="60%" />
 </div>
 
 <div  align="center">
