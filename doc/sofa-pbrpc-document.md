@@ -330,6 +330,7 @@ sofa-pbrpc将内存划分为固定大小的buffer作为缓冲区，对buffer采�
 ![输入图片说明](image/rpc-compress.png "在这里输入图片标题")
 ### 超时管理
 使用lock+swap操作缩小临界区。
+
 ![输入图片说明](image/timeout-manager.png "在这里输入图片标题")
 ### 流量控制
 按时间片分配流量配额，保证流控精准高效。
@@ -344,19 +345,6 @@ sofa-pbrpc支持用户使用http客户端向server发送json格式的数据请�
 ## 提供丰富的工具类
 sofa-pbrpc提供常用工具类给开发者，包括：
 ![输入图片说明](image/sofa-pbrpc-dev-tools.png	 "在这里输入图片标题")
-# 性能
-## 测试环境
-* cpu 16core
-* memory 64G
-* kernel 2.6.32_1-15-0-0
-
-## 吞吐
-
-![输入图片说明](image/bench_qps.jpg	 "在这里输入图片标题")
-
-## 延迟
-
-![输入图片说明](image/bench_delay.jpg	 "在这里输入图片标题")
 
 # 支持团队
 百度网页搜索部开源团队 [opensearch@baidu.com](opensearch@baidu.com)
