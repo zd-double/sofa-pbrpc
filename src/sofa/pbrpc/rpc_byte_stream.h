@@ -8,7 +8,7 @@
 #include <cstdio> // for snprintf()
 #include <cstring> // for memset()
 
-#include <boost/asio.hpp>
+#include <sofa/pbrpc/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 

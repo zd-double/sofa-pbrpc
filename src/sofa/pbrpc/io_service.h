@@ -35,7 +35,7 @@
 #define BOOST_ASIO_HAS_EPOLL 1
 #endif
 
-#include <boost/asio.hpp>
+#include <sofa/pbrpc/asio.hpp>
 #include <sofa/pbrpc/common.h>
 
 namespace sofa {
