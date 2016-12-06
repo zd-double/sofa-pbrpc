@@ -17,9 +17,9 @@ namespace pbrpc {
 class HTTPRpcRequestParser;
 
 class HTTPRpcRequest;
-typedef sofa::pbrpc::shared_ptr<HTTPRpcRequest> HTTPRpcRequestPtr;
+typedef sofa::pbrpc::boost::shared_ptr<HTTPRpcRequest> HTTPRpcRequestPtr;
 
-struct HTTPResponse;
+class HTTPResponse;
 
 class HTTPRpcRequest : public RpcRequest
 {

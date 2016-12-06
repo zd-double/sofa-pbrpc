@@ -10,27 +10,27 @@
 //  Copyright Beman Dawes 2002, 2006
 
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
-//  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//  file LICENSE_1_0.txt or copy at http://www.sofa/pbrpc/boost.org/LICENSE_1_0.txt)
 
-//  See library home page at http://www.boost.org/libs/system
+//  See library home page at http://www.sofa/pbrpc/boost.org/libs/system
 
 //----------------------------------------------------------------------------//
 
-#include <boost/config/warning_disable.hpp>
+//#include <sofa/pbrpc/boost/config/warning_disable.hpp>
 
-// define BOOST_SYSTEM_SOURCE so that <boost/system/config.hpp> knows
+// define BOOST_SYSTEM_SOURCE so that <sofa/pbrpc/boost/system/config.hpp> knows
 // the library is being built (possibly exporting rather than importing code)
 #define BOOST_SYSTEM_SOURCE 
 
-#include <boost/system/config.hpp>
-#include <boost/system/error_code.hpp>
-#include <boost/cerrno.hpp>
+#include <sofa/pbrpc/boost/system/config.hpp>
+#include <sofa/pbrpc/boost/system/error_code.hpp>
+#include <sofa/pbrpc/boost/cerrno.hpp>
 #include <vector>
 #include <cstdlib>
 #include <cassert>
 
-using namespace boost::system;
-using namespace boost::system::errc;
+using namespace sofa::pbrpc::boost::system;
+using namespace sofa::pbrpc::boost::system::errc;
 
 #include <cstring> // for strerror/strerror_r
 
@@ -51,7 +51,7 @@ using namespace boost::system::errc;
 namespace
 {
 #if defined(__PGI)
-  using boost::system::errc::invalid_argument;
+  using sofa::pbrpc::boost::system::errc::invalid_argument;
 #endif
   //  standard error categories  ---------------------------------------------//
 
@@ -412,6 +412,10 @@ namespace
 
 } // unnamed namespace
 
+namespace sofa
+{
+namespace pbrpc
+{
 namespace boost
 {
   namespace system
@@ -439,3 +443,6 @@ namespace boost
 
   } // namespace system
 } // namespace boost
+} // namespace pbrpc 
+} // namespace sofa 
+

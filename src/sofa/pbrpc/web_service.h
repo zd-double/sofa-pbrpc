@@ -12,12 +12,12 @@
 namespace sofa {
 namespace pbrpc {
 
-struct HTTPRequest;
-struct HTTPResponse;
+class HTTPRequest;
+class HTTPResponse;
 typedef ExtClosure<bool(const HTTPRequest&, HTTPResponse&)>* Servlet;
 
 typedef std::map<const std::string, std::pair<Servlet, bool> > ServletMap;
-typedef sofa::pbrpc::shared_ptr<ServletMap> ServletMapPtr;
+typedef sofa::pbrpc::boost::shared_ptr<ServletMap> ServletMapPtr;
 
 class WebService
 {

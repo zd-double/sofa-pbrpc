@@ -17,8 +17,8 @@ namespace pbrpc {
 
 // Defined in other files.
 class RpcServerImpl;
-struct HTTPRequest;
-struct HTTPResponse;
+class HTTPRequest;
+class HTTPResponse;
 
 struct RpcServerOptions {
     int work_thread_num; // thread count for network handing and service processing, default 8.
@@ -186,13 +186,13 @@ public:
     Servlet UnregisterWebServlet(const std::string& path);
 
 public:
-    const sofa::pbrpc::shared_ptr<RpcServerImpl>& impl() const
+    const sofa::pbrpc::boost::shared_ptr<RpcServerImpl>& impl() const
     {
         return _impl;
     }
 
 private:
-    sofa::pbrpc::shared_ptr<RpcServerImpl> _impl;
+    sofa::pbrpc::boost::shared_ptr<RpcServerImpl> _impl;
 
     SOFA_PBRPC_DISALLOW_EVIL_CONSTRUCTORS(RpcServer);
 }; // class RpcServer

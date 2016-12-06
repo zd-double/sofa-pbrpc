@@ -112,7 +112,7 @@ void RpcRequest::OnCallMethodDone(
                      << " {" << cntl->SequenceId() << "}"
                      << ": call method \"" << cntl->MethodId() << "\" timeout, not response"
                      << ": server_timeout_us=" << (cntl->ServerTimeout() * 1000)
-                     << ", server_used_time_us=" << server_used_time_us
+                     << ", server_used_time_us=" << server_used_time_us;
                      << ", process_time_us=" << process_time_us;
 #else
         SLOG(WARNING, "OnCallMethodDone(): %s {%lu}: call method \"%s\" timeout, not response: "
@@ -200,7 +200,7 @@ void RpcRequest::SendSucceedResponse(
     }
 
     real_stream->send_response(buffer,
-            boost::bind(&RpcRequest::OnSendResponseDone, shared_from_this(), _1));
+            sofa::pbrpc::boost::bind(&RpcRequest::OnSendResponseDone, shared_from_this(), _1));
 }
 
 void RpcRequest::SendFailedResponse(
@@ -239,7 +239,7 @@ void RpcRequest::SendFailedResponse(
     }
 
     real_stream->send_response(read_buffer,
-            boost::bind(&RpcRequest::OnSendResponseDone, shared_from_this(), _1));
+            sofa::pbrpc::boost::bind(&RpcRequest::OnSendResponseDone, shared_from_this(), _1));
 }
 
 void RpcRequest::OnSendResponseDone(
